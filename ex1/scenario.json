@@ -1,0 +1,9 @@
+{
+  "field": {
+    "height": 10,
+    "width": 5
+  },
+  "pedestrians": [[0, 4], [0, 2]],
+  "obstacles": [[3, 2]],
+  "target":[[5, 3]]
+}
