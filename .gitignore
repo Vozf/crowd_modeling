@@ -1,3 +1,4 @@
 .idea
 ex_0
 *.pdf
+**/*.ipynb_checkpoints/
