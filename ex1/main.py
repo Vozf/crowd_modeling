@@ -24,7 +24,7 @@ def read_scenario(filepath):
     # scenario.target = tuple(tuple(coordinate) for coordinate in scenario.target)
     scenario.field = np.asarray(scenario.field)
     scenario.pedestrians = np.asarray(scenario.pedestrians)
-    scenario.obstacles = np.asarray(scenario.obstacles)
+    scenario.obstacles = np.asarray(scenario.obstacles) if scenario.obstacles else np.array([]).reshape(0, 2)
     scenario.target = np.asarray(scenario.target)
     return State(scenario.field, scenario.pedestrians, scenario.obstacles, scenario.target)
 
