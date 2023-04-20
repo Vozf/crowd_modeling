@@ -2,6 +2,7 @@ import itertools
 import json
 from copy import deepcopy
 from dataclasses import dataclass
+from math import floor
 from types import SimpleNamespace
 import heapq as heap
 
@@ -68,30 +69,40 @@ class Simulation:
         return parentsMap, nodeCosts
 
     @staticmethod
-    def generate_states(scenario, utility):
-        states = [deepcopy(scenario)]
-        converged = False
-        while not converged:
-            converged = True
-            current_state = deepcopy(states[-1])
-            for idx, ped in enumerate(current_state.pedestrians):
-                neighbours = itertools.product((ped[0] - 1, ped[0], ped[0] + 1), (ped[1] - 1, ped[1], ped[1] + 1))
-                neighbours = filter(
-                    lambda coord: 0 <= coord[0] < scenario.field[0] and 0 <= coord[1] < scenario.field[1], neighbours)
-                neighbours = np.array(list(neighbours))
-                best_neighbour = neighbours[utility[neighbours[:, 0], neighbours[:, 1]].argmin()]
-                if not (best_neighbour == ped).all():
-                    converged = False
-                current_state.pedestrians[idx] = best_neighbour
-            states.append(current_state)
-        return states
+    def generate_states(scenario: State, utility):
+        states = [(0, deepcopy(scenario))]
+        actions = [*((0, idx) for idx in range(len(scenario.pedestrians)))]
+        while actions:
+            current_timestamp, idx = heap.heappop(actions)
+            old_timestamp, current_state = deepcopy(states[-1])
+            ped = current_state.pedestrians[idx]
+
+            neighbours = itertools.product((ped[0] - 1, ped[0], ped[0] + 1), (ped[1] - 1, ped[1], ped[1] + 1))
+            neighbours = filter(
+                lambda coord: 0 <= coord[0] < scenario.field[0] and 0 <= coord[1] < scenario.field[1], neighbours)
+            neighbours = np.array(list(neighbours))
+            best_neighbour = neighbours[utility[neighbours[:, 0], neighbours[:, 1]].argmin()]
+            if (best_neighbour == ped).all():
+                continue
+
+            step_time = 1.4 if np.abs(best_neighbour - ped).sum() == 2 else 1.0
+            current_state.pedestrians[idx] = best_neighbour
+            states.append((current_timestamp, current_state))
+            heap.heappush(actions, (round(current_timestamp + step_time, 2), idx))
+
+        filtered_states = []
+        for i in range(len(states) - 1):
+            if floor(states[i][0]) != floor(states[i + 1][0]):
+                filtered_states.append(states[i])
+
+        return filtered_states
 
     def get_states(self):
         return self.states
 
 
 def main():
-    scenario = read_scenario('scenario.json')
+    scenario = read_scenario('scenario_task_3.json')
     sim = Simulation(scenario)
     print(sim.get_states())
 
