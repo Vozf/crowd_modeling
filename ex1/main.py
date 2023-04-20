@@ -2,7 +2,7 @@ import itertools
 import json
 from copy import deepcopy
 from dataclasses import dataclass
-from math import floor
+from math import floor, ceil
 from types import SimpleNamespace
 import heapq as heap
 
@@ -90,10 +90,12 @@ class Simulation:
             states.append((current_timestamp, current_state))
             heap.heappush(actions, (round(current_timestamp + step_time, 2), idx))
 
+        # to improve performance keep only last state in every second timestep
         filtered_states = []
         for i in range(len(states) - 1):
-            if floor(states[i][0]) != floor(states[i + 1][0]):
-                filtered_states.append(states[i])
+            if ceil(states[i][0]) != ceil(states[i + 1][0]):
+                filtered_states.append((ceil(states[i][0]), states[i][1]))
+        filtered_states.append((ceil(states[-1][0]), states[-1][1]))
 
         return filtered_states
 
