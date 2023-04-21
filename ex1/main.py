@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from math import floor, ceil
 from types import SimpleNamespace
 import heapq as heap
+from typing import Union
 
 import numpy as np
 
@@ -76,16 +77,18 @@ class Simulation:
         else:
             grid = np.asarray([(a, b) for a in range(scenario.field[0]) for b in range(scenario.field[1])])
             # .reshape((scenario.field.width, scenario.field.height, 2))
-            distances = np.linalg.norm(grid[:, np.newaxis, :] - scenario.target, axis=-1)
+            distances = np.linalg.norm(grid[:, np.newaxis, :] - list(scenario.target), axis=-1)
             utility_map = distances.min(axis=-1).reshape((scenario.field[0], scenario.field[1]))
             return utility_map
 
     @classmethod
-    def generate_states(cls, scenario: State, utility):
+    def generate_states(cls, scenario: State, utility, time_cap=100):
         states = [(0, deepcopy(scenario))]
         actions = [*((0, ped) for ped in scenario.pedestrians)]
         while actions:
             current_timestamp, ped = heap.heappop(actions)
+            if current_timestamp > time_cap:
+                break
             old_timestamp, current_state = deepcopy(states[-1])
             current_state: State
 
@@ -114,7 +117,7 @@ class Simulation:
             states.append((current_timestamp, current_state))
 
         # to improve visualization performance keep only last state in every second timestep
-        filtered_states = []
+        filtered_states = [states[0]]
         for i in range(len(states) - 1):
             if ceil(states[i][0]) != ceil(states[i + 1][0]):
                 filtered_states.append((ceil(states[i][0]), states[i][1]))
@@ -123,7 +126,7 @@ class Simulation:
         return filtered_states
 
     @classmethod
-    def get_all_neighbours_distance(cls, cell_1, cells):
+    def get_all_neighbours_distance(cls, cell_1: tuple, cells: Union[list, np.ndarray]) -> np.ndarray:
         diagonal = np.abs(np.subtract(cells, cell_1)).sum(-1) == 2
         distance = np.ones(diagonal.shape)
         distance[diagonal] = 1.4
@@ -147,7 +150,7 @@ class Simulation:
 
 def main():
     scenario = read_scenario('scenario_task_4.json')
-    sim = Simulation(scenario)
+    sim = Simulation(scenario, dijkstra=False)
     # print(sim.get_states())
 
 
