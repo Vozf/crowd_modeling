@@ -33,9 +33,9 @@ def read_scenario(filepath):
 
 
 class Simulation:
-    def __init__(self, scenario):
+    def __init__(self, scenario, dijkstra=True):
         self.scenario = scenario
-        self.utility = self.generate_utility(scenario)
+        self.utility = self.generate_utility(scenario, dijkstra)
         self.states = self.generate_states(scenario, self.utility)
 
     @classmethod
@@ -63,6 +63,7 @@ class Simulation:
                         heap.heappush(pq, (new_cost, neighbor))
 
             utility_map = np.ones((scenario.field[0], scenario.field[1]))
+            utility_map[:] = np.inf
             keys = np.asarray(list(node_costs.keys()))
             utility_map[keys[:, 0], keys[:, 1]] = list(node_costs.values())
             return utility_map
@@ -76,9 +77,6 @@ class Simulation:
 
     @classmethod
     def generate_states(cls, scenario: State, utility):
-        # distances = np.linalg.norm(np.array(list(scenario.pedestrians))[:, np.newaxis, :] - np.array(list(scenario.target)), axis=-1)
-        # print(f"source distances {distances}")
-
         states = [(0, deepcopy(scenario))]
         actions = [*((0, ped) for ped in scenario.pedestrians)]
         while actions:
@@ -104,7 +102,7 @@ class Simulation:
 
             states.append((current_timestamp, current_state))
 
-        # to improve performance keep only last state in every second timestep
+        # to improve visualization performance keep only last state in every second timestep
         filtered_states = []
         for i in range(len(states) - 1):
             if ceil(states[i][0]) != ceil(states[i + 1][0]):
@@ -122,20 +120,19 @@ class Simulation:
         neighbours = itertools.product((ped[0] - 1, ped[0], ped[0] + 1), (ped[1] - 1, ped[1], ped[1] + 1))
         neighbours = filter(
             lambda coord: 0 <= coord[0] < current_state.field[0] and 0 <= coord[1] < current_state.field[1], neighbours)
+        neighbours = filter(lambda neighbour: neighbour not in current_state.obstacles, neighbours)
         return neighbours
 
     @staticmethod
     def filter_occupied_neighbours(neighbours, current_state):
-        return filter(
-            lambda neighbour: neighbour not in current_state.pedestrians and neighbour not in current_state.obstacles,
-            neighbours)
+        return filter(lambda neighbour: neighbour not in current_state.pedestrians, neighbours)
 
     def get_states(self):
         return self.states
 
 
 def main():
-    scenario = read_scenario('scenario_task_3.json')
+    scenario = read_scenario('scenario_task_4.json')
     sim = Simulation(scenario)
     # print(sim.get_states())
 
