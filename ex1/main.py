@@ -22,13 +22,13 @@ class State:
 def read_scenario(filepath):
     with open(filepath) as f:
         scenario = json.load(f, object_hook=lambda d: SimpleNamespace(**d))
-    # scenario.pedestrians = tuple(tuple(coordinate) for coordinate in scenario.pedestrians)
-    # scenario.obstacles = tuple(tuple(coordinate) for coordinate in scenario.obstacles)
-    # scenario.target = tuple(tuple(coordinate) for coordinate in scenario.target)
-    scenario.field = np.asarray(scenario.field)
-    scenario.pedestrians = np.asarray(scenario.pedestrians)
-    scenario.obstacles = np.asarray(scenario.obstacles) if scenario.obstacles else np.array([]).reshape(0, 2)
-    scenario.target = np.asarray(scenario.target)
+    scenario.pedestrians = set(tuple(coordinate) for coordinate in scenario.pedestrians)
+    scenario.obstacles = set(tuple(coordinate) for coordinate in scenario.obstacles)
+    scenario.target = set(tuple(coordinate) for coordinate in scenario.target)
+    # scenario.field = np.asarray(scenario.field)
+    # scenario.pedestrians = np.asarray(scenario.pedestrians)
+    # scenario.obstacles = np.asarray(scenario.obstacles) if scenario.obstacles else np.array([]).reshape(0, 2)
+    # scenario.target = np.asarray(scenario.target)
     return State(scenario.field, scenario.pedestrians, scenario.obstacles, scenario.target)
 
 
@@ -49,7 +49,6 @@ class Simulation:
                 heap.heappush(pq, (0, endnonde))
 
             while pq:
-                # go greedily by always extending the shorter cost nodes first
                 _, node = heap.heappop(pq)
                 visited.add(tuple(node))
 
@@ -57,14 +56,13 @@ class Simulation:
                 unvisited_neighbours = list(filter(lambda x: x not in visited, neighbours))
 
                 for neighbor in unvisited_neighbours:
-                    newCost = node_costs[tuple(node)] + cls.get_neighbour_distance(node, neighbor)
-                    print(newCost)
-                    if node_costs[neighbor] > newCost:
+                    new_cost = node_costs[tuple(node)] + cls.get_neighbour_distance(node, neighbor)
+                    if node_costs[neighbor] > new_cost:
                         # parentsMap[neighbor] = node
-                        node_costs[neighbor] = newCost
-                        heap.heappush(pq, (newCost, neighbor))
+                        node_costs[neighbor] = new_cost
+                        heap.heappush(pq, (new_cost, neighbor))
 
-            utility_map = np.zeros((scenario.field[0], scenario.field[1]))
+            utility_map = np.ones((scenario.field[0], scenario.field[1]))
             keys = np.asarray(list(node_costs.keys()))
             utility_map[keys[:, 0], keys[:, 1]] = list(node_costs.values())
             return utility_map
@@ -78,27 +76,33 @@ class Simulation:
 
     @classmethod
     def generate_states(cls, scenario: State, utility):
-        distances = np.linalg.norm(scenario.pedestrians[:, np.newaxis, :] - scenario.target, axis=-1)
-        print(f"source distances {distances}")
+        # distances = np.linalg.norm(np.array(list(scenario.pedestrians))[:, np.newaxis, :] - np.array(list(scenario.target)), axis=-1)
+        # print(f"source distances {distances}")
 
         states = [(0, deepcopy(scenario))]
-        actions = [*((0, idx) for idx in range(len(scenario.pedestrians)))]
+        actions = [*((0, ped) for ped in scenario.pedestrians)]
         while actions:
-            current_timestamp, idx = heap.heappop(actions)
+            current_timestamp, ped = heap.heappop(actions)
             old_timestamp, current_state = deepcopy(states[-1])
-            ped = current_state.pedestrians[idx]
+            current_state: State
 
             neighbours = cls.get_neighbours(ped, current_state)
+            neighbours = cls.filter_occupied_neighbours(neighbours, current_state)
+            neighbours = itertools.chain(neighbours, (ped,))
             neighbours = np.array(list(neighbours))
             best_neighbour = neighbours[utility[neighbours[:, 0], neighbours[:, 1]].argmin()]
-            if (best_neighbour == ped).all():
-                print(f"{idx} reached target in {current_timestamp} time")
-                continue
 
             step_time = cls.get_neighbour_distance(best_neighbour, ped)
-            current_state.pedestrians[idx] = best_neighbour
+            new_ped_position = tuple(best_neighbour)
+            current_state.pedestrians.remove(ped)
+
+            if new_ped_position in current_state.target:
+                print(f"reached target in {current_timestamp + step_time} time")
+            else:
+                current_state.pedestrians.add(new_ped_position)
+                heap.heappush(actions, (round(current_timestamp + step_time, 2), new_ped_position))
+
             states.append((current_timestamp, current_state))
-            heap.heappush(actions, (round(current_timestamp + step_time, 2), idx))
 
         # to improve performance keep only last state in every second timestep
         filtered_states = []
@@ -120,6 +124,11 @@ class Simulation:
             lambda coord: 0 <= coord[0] < current_state.field[0] and 0 <= coord[1] < current_state.field[1], neighbours)
         return neighbours
 
+    @staticmethod
+    def filter_occupied_neighbours(neighbours, current_state):
+        return filter(
+            lambda neighbour: neighbour not in current_state.pedestrians and neighbour not in current_state.obstacles,
+            neighbours)
 
     def get_states(self):
         return self.states
