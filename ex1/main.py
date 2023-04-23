@@ -109,7 +109,7 @@ class Simulation:
             next_action_time = round(current_timestamp + step_time, 2)
 
             if new_ped_position in current_state.target:
-                print(f"reached target in {next_action_time} time")
+                print(f"reached target in {next_action_time} time units")
             else:
                 current_state.pedestrians.add(new_ped_position)
                 heap.heappush(actions, (next_action_time, new_ped_position))
