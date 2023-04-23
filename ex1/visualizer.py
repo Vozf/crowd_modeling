@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Tuple, List
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -7,15 +8,26 @@ from IPython.display import HTML
 from matplotlib import animation
 from tqdm import autonotebook as tqdm
 
+from ex1.main import State, read_scenario, Simulation
+
+
+def run_scenario(filepath, dijkstra=True, time_cap=None):
+    scenario = read_scenario(filepath)
+    states = Simulation(scenario, dijkstra=dijkstra, time_cap=time_cap).get_states()
+
+    vis = Visualizer(states)
+    return vis
+
 
 class Visualizer:
-    def __init__(self, states):
+    def __init__(self, states: List[Tuple[int, State]], draw_every_cell: bool = False):
         self.states = states
         plt.ioff()
         self.fig, ax = plt.subplots()
         plt.ion()
-        # ax.set_xticks(np.arange(0, states.field[1] + 1, 1))
-        # ax.set_yticks(np.arange(0, states.field[0] + 1, 1))
+        if draw_every_cell:
+            ax.set_xticks(np.arange(0, states[0][1].field[1] + 1, 1))
+            ax.set_yticks(np.arange(0, states[0][1].field[0] + 1, 1))
         plt.grid()
 
         ax.set_xlim((0, states[0][1].field[1]))
