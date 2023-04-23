@@ -24,8 +24,12 @@ class Visualizer:
         colors = ['b', 'r', 'g']
         cmap = matplotlib.colors.ListedColormap(colors)
         self.sc_plot = ax.scatter([], [], c=[], cmap=cmap)
+        self.anim = self._draw()
 
-    def draw(self):
+    def get_anim(self):
+        return self.anim
+
+    def _draw(self):
         offsets = []
         colors = []
         for timestamp, state in self.states:
@@ -51,10 +55,10 @@ class Visualizer:
             sc_plot.set_array(colors[i])
             return (sc_plot,)
 
-        anim = animation.FuncAnimation(self.fig, partial(animate, sc_plot=self.sc_plot),
-                                       init_func=partial(init, sc_plot=self.sc_plot),
-                                       frames=len(self.states), interval=500, blit=True)
-        return anim
+        self.anim = animation.FuncAnimation(self.fig, partial(animate, sc_plot=self.sc_plot),
+                                            init_func=partial(init, sc_plot=self.sc_plot), frames=len(self.states),
+                                            interval=500, blit=True)
+        return self.anim
 
-    def get_video(self, anim):
-        return HTML(anim.to_html5_video())
+    def get_video(self):
+        return HTML(self.anim.to_html5_video())

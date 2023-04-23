@@ -34,10 +34,10 @@ def read_scenario(filepath):
 
 
 class Simulation:
-    def __init__(self, scenario, dijkstra=True):
+    def __init__(self, scenario, dijkstra=True, time_cap: int = None):
         self.scenario = scenario
         self.utility = self.generate_utility(scenario, dijkstra)
-        self.states = self.generate_states(scenario, self.utility)
+        self.states = self.generate_states(scenario, self.utility, time_cap)
 
     @classmethod
     def generate_utility(cls, scenario: State, dijkstra: bool = True):
@@ -82,12 +82,12 @@ class Simulation:
             return utility_map
 
     @classmethod
-    def generate_states(cls, scenario: State, utility, time_cap=100):
+    def generate_states(cls, scenario: State, utility, time_cap):
         states = [(0, deepcopy(scenario))]
         actions = [*((0, ped) for ped in scenario.pedestrians)]
         while actions:
             current_timestamp, ped = heap.heappop(actions)
-            if current_timestamp > time_cap:
+            if time_cap is not None and current_timestamp > time_cap:
                 break
             old_timestamp, current_state = deepcopy(states[-1])
             current_state: State
