@@ -122,8 +122,9 @@ class Simulation:
             if ceil(states[i][0]) != ceil(states[i + 1][0]):
                 filtered_states.append((ceil(states[i][0]), states[i][1]))
         filtered_states.append((ceil(states[-1][0]), states[-1][1]))
+        filtered_states_without_timestamps = [state for ts, state in filtered_states]
 
-        return filtered_states
+        return filtered_states_without_timestamps
 
     @classmethod
     def get_all_neighbours_distance(cls, cell_1: tuple, cells: Union[list, np.ndarray]) -> np.ndarray:
@@ -149,8 +150,8 @@ class Simulation:
 
 
 def main():
-    scenario = read_scenario('scenario_task_4.json')
-    sim = Simulation(scenario, dijkstra=False)
+    scenario = read_scenario('scenario_task_4_2.json')
+    sim = Simulation(scenario, dijkstra=True)
     # print(sim.get_states())
 
 

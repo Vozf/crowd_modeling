@@ -20,18 +20,18 @@ def run_scenario(filepath, dijkstra=True, time_cap=None):
 
 
 class Visualizer:
-    def __init__(self, states: List[Tuple[int, State]], draw_every_cell: bool = False):
+    def __init__(self, states: List[State], draw_every_cell: bool = False):
         self.states = states
         plt.ioff()
         self.fig, ax = plt.subplots()
         plt.ion()
         if draw_every_cell:
-            ax.set_xticks(np.arange(0, states[0][1].field[1] + 1, 1))
-            ax.set_yticks(np.arange(0, states[0][1].field[0] + 1, 1))
+            ax.set_xticks(np.arange(0, states[0].field[1] + 1, 1))
+            ax.set_yticks(np.arange(0, states[0].field[0] + 1, 1))
         plt.grid()
 
-        ax.set_xlim((0, states[0][1].field[1]))
-        ax.set_ylim((0, states[0][1].field[0]))
+        ax.set_xlim((0, states[0].field[1]))
+        ax.set_ylim((0, states[0].field[0]))
 
         colors = ['b', 'r', 'g']
         cmap = matplotlib.colors.ListedColormap(colors)
@@ -44,7 +44,7 @@ class Visualizer:
     def _draw(self):
         offsets = []
         colors = []
-        for timestamp, state in self.states:
+        for state in self.states:
             points = np.asarray((list(state.pedestrians) + list(state.obstacles) + list(state.target)))
             points[..., 0], points[..., 1] = points[..., 1], points[..., 0].copy()
             offsets.append(points)
