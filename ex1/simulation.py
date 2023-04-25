@@ -164,7 +164,7 @@ class Simulation:
 
 
 def main():
-    scenario = read_scenario('scenario_task_2.json')
+    scenario = read_scenario('scenarios/scenario_task_2.json')
     sim = Simulation(scenario, dijkstra=False)
     # print(sim.get_states())
 

@@ -8,7 +8,7 @@ from IPython.display import HTML
 from matplotlib import animation
 from tqdm import autonotebook as tqdm
 
-from ex1.main import State, read_scenario, Simulation
+from ex1.simulation import State, read_scenario, Simulation
 
 
 def run_scenario(filepath, dijkstra=True, model_demographic_speed=False, time_cap=None):
