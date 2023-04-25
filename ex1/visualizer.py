@@ -11,9 +11,10 @@ from tqdm import autonotebook as tqdm
 from ex1.main import State, read_scenario, Simulation
 
 
-def run_scenario(filepath, dijkstra=True, time_cap=None):
+def run_scenario(filepath, dijkstra=True, model_demographic_speed=False, time_cap=None):
     scenario = read_scenario(filepath)
-    states = Simulation(scenario, dijkstra=dijkstra, time_cap=time_cap).get_states()
+    states = Simulation(scenario, dijkstra=dijkstra, model_demographic_speed=model_demographic_speed,
+                        time_cap=time_cap).get_states()
 
     vis = Visualizer(states)
     return vis

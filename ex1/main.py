@@ -14,10 +14,10 @@ import numpy as np
 
 @dataclass
 class State:
-    field: np.ndarray
-    pedestrians: np.ndarray
-    obstacles: np.ndarray
-    target: np.ndarray
+    field: set
+    pedestrians: set
+    obstacles: set
+    target: set
 
 
 def read_scenario(filepath):
@@ -26,18 +26,32 @@ def read_scenario(filepath):
     scenario.pedestrians = set(tuple(coordinate) for coordinate in scenario.pedestrians)
     scenario.obstacles = set(tuple(coordinate) for coordinate in scenario.obstacles)
     scenario.target = set(tuple(coordinate) for coordinate in scenario.target)
-    # scenario.field = np.asarray(scenario.field)
-    # scenario.pedestrians = np.asarray(scenario.pedestrians)
-    # scenario.obstacles = np.asarray(scenario.obstacles) if scenario.obstacles else np.array([]).reshape(0, 2)
-    # scenario.target = np.asarray(scenario.target)
     return State(scenario.field, scenario.pedestrians, scenario.obstacles, scenario.target)
 
 
 class Simulation:
-    def __init__(self, scenario, dijkstra=True, time_cap: int = None):
+    def __init__(self, scenario, dijkstra=True, model_demographic_speed=False, time_cap: int = None):
         self.scenario = scenario
+        self.speed = self.generate_speed_for_pedestrians(model_demographic_speed, len(scenario.pedestrians))
         self.utility = self.generate_utility(scenario, dijkstra)
-        self.states = self.generate_states(scenario, self.utility, time_cap)
+        self.states = self.generate_states(scenario, self.utility, self.speed, time_cap)
+
+    @staticmethod
+    def generate_speed_for_pedestrians(model_demographic_speed, num_of_pedestrians):
+        # speed corresponding to each age group: 20yo, 30yo, 40yo, 50yo, 60yo, 70yo, rimea Table 7, page 20
+        # Age group Number of agents Min. [m/s] Max. [m/s]
+        # 20y.o. 10 1.60 1.64
+        # 30y.o. 10 1.52 1.56
+        # 40y.o. 10 1.46 1.50
+        # 50y.o. 10 1.39 1.43
+        # 60y.o. 5 1.27 1.27
+        # 70y.o. 5 1.07 1.07
+
+        if not model_demographic_speed:
+            return np.ones(num_of_pedestrians)
+        speed_for_age_group = [1.6, 1.52, 1.46, 1.39, 1.27, 1.07]
+        probability_for_age_group = [0.2, 0.2, 0.2, 0.2, 0.1, 0.1]
+        return np.random.choice(speed_for_age_group, size=num_of_pedestrians, p=probability_for_age_group)
 
     @classmethod
     def generate_utility(cls, scenario: State, dijkstra: bool = True):
@@ -82,11 +96,11 @@ class Simulation:
             return utility_map
 
     @classmethod
-    def generate_states(cls, scenario: State, utility, time_cap):
+    def generate_states(cls, scenario: State, utility, speed, time_cap):
         states = [(0, deepcopy(scenario))]
-        actions = [*((0, ped) for ped in scenario.pedestrians)]
+        actions = [*((0, ped, ped_speed) for ped, ped_speed in zip(scenario.pedestrians, speed))]
         while actions:
-            current_timestamp, ped = heap.heappop(actions)
+            current_timestamp, ped, ped_speed = heap.heappop(actions)
             if time_cap is not None and current_timestamp > time_cap:
                 break
             old_timestamp, current_state = deepcopy(states[-1])
@@ -103,16 +117,16 @@ class Simulation:
 
             best_neighbour = neighbours[best_neighbour_idx]
 
-            step_time = neighbour_distance[best_neighbour_idx]
+            step_time = neighbour_distance[best_neighbour_idx] / ped_speed
             new_ped_position = tuple(best_neighbour)
             current_state.pedestrians.remove(ped)
             next_action_time = round(current_timestamp + step_time, 2)
 
             if new_ped_position in current_state.target:
-                print(f"reached target in {next_action_time} time units")
+                print(f"Pedestrian with speed {ped_speed} reached target in {next_action_time} time units")
             else:
                 current_state.pedestrians.add(new_ped_position)
-                heap.heappush(actions, (next_action_time, new_ped_position))
+                heap.heappush(actions, (next_action_time, new_ped_position, ped_speed))
 
             states.append((current_timestamp, current_state))
 
@@ -150,8 +164,8 @@ class Simulation:
 
 
 def main():
-    scenario = read_scenario('scenario_task_4_2.json')
-    sim = Simulation(scenario, dijkstra=True)
+    scenario = read_scenario('scenario_task_2.json')
+    sim = Simulation(scenario, dijkstra=False)
     # print(sim.get_states())
 
 
