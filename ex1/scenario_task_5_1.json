@@ -1,6 +1,6 @@
 {
-  "field": [2, 41],
-  "pedestrians": [[1, 0]],
+  "field": [2, 40],
+  "pedestrians": [[0, 0]],
   "obstacles": [],
-  "target":[[1, 40]]
+  "target":[[0, 39]]
 }
