@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Tuple, List
+from typing import List
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -8,10 +8,25 @@ from IPython.display import HTML
 from matplotlib import animation
 from tqdm import autonotebook as tqdm
 
-from ex1.simulation import State, read_scenario, Simulation
+from ex1.simulation import Simulation
+from ex1.utility import read_scenario, State
 
 
-def run_scenario(filepath, dijkstra=True, model_demographic_speed=False, time_cap=None):
+def run_scenario(filepath: str, dijkstra: bool = True, model_demographic_speed: bool = False,
+                 time_cap: float = None) -> 'Visualizer':
+    """
+    Runs a simulation of a given scenario and returns the visualizer.
+
+    Args:
+        filepath: Path of the scenario file to simulate.
+        dijkstra: Use Dijkstra algorithm instead of A*.
+        model_demographic_speed: Use the demographic speed model instead of the constant speed model.
+        time_cap: Maximum time to simulate.
+
+    Returns:
+        Visualizer: A visualizer instance of the simulation.
+
+    """
     scenario = read_scenario(filepath)
     states = Simulation(scenario, dijkstra=dijkstra, model_demographic_speed=model_demographic_speed,
                         time_cap=time_cap).get_states()
@@ -22,6 +37,14 @@ def run_scenario(filepath, dijkstra=True, model_demographic_speed=False, time_ca
 
 class Visualizer:
     def __init__(self, states: List[State], draw_every_cell: bool = False):
+        """
+        Initializes the Visualizer object.
+
+        Args:
+            states: List of State objects to visualize.
+            draw_every_cell: Whether to draw every cell of the field (may be slow).
+
+        """
         self.states = states
         plt.ioff()
         self.fig, ax = plt.subplots()
@@ -39,10 +62,24 @@ class Visualizer:
         self.sc_plot = ax.scatter([], [], c=[], cmap=cmap)
         self.anim = self._draw()
 
-    def get_anim(self):
+    def get_anim(self) -> animation.FuncAnimation:
+        """
+        Returns the animation.
+
+        Returns:
+            FuncAnimation: The animation instance.
+
+        """
         return self.anim
 
-    def _draw(self):
+    def _draw(self) -> animation.FuncAnimation:
+        """
+        Draws the animation.
+
+        Returns:
+            FuncAnimation: The animation instance.
+
+        """
         offsets = []
         colors = []
         for state in self.states:
@@ -74,4 +111,8 @@ class Visualizer:
         return self.anim
 
     def get_video(self):
+        """
+        Creates the html video tag where video can be downloaded as a file
+        :return: HTML
+        """
         return HTML(self.anim.to_html5_video())
