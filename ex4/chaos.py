@@ -29,7 +29,7 @@ def generate_bifurcation_diagram(x0=0.5, num_iterations=100, transient=100):
             bifurcation_values: An array of bifurcation parameter values (r).
             population_values: An array of population values corresponding to each r value.
     """
-    r_values = np.linspace(0., 4.0, 1000)
+    r_values = np.linspace(2.4, 4.0, 1000)
     population_values = []
     bifurcation_values = []
 
