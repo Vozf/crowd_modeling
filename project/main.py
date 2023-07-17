@@ -16,13 +16,21 @@ def main():
 
     print('\nRunning on Google news subset dataset')
     embeddings = process_dataset(X, n_components, geom_radius=20.0)
-    with open('google_news_embedding.pkl', 'wb') as f:
+    with open('google_news_embedding_1500.pkl', 'wb') as f:
         pickle.dump(embeddings, f)
 
-    X, color = datasets.make_s_curve(num_samples, random_state=0)
+    num_samples_s_curve = 20000
+    X, color = datasets.make_s_curve(num_samples_s_curve, random_state=0)
     print('\nRunning on sklearn S curve dataset')
     embeddings = process_dataset(X, n_components, geom_radius=0.09)
     with open('s_curve_embedding.pkl', 'wb') as f:
+        pickle.dump(embeddings, f)
+
+    with open('daily_mail.pkl', 'rb') as f:
+        X = pickle.load(f)
+    print('\nRunning on daily mail')
+    embeddings = process_dataset(X, n_components, geom_radius=5.0)
+    with open('daily_mail_embeddings.pkl', 'wb') as f:
         pickle.dump(embeddings, f)
 
 
@@ -33,7 +41,11 @@ def process_dataset(X, n_components, geom_radius=1.0):
     sklearn_algos = get_sklearn_algorithms(n_components)
     datafold_algos = {'datafold_diffusion_maps': datafold.dynfold.DiffusionMaps(n_eigenpairs=n_components)}
 
-    all_algos = {**megaman_algos, **sklearn_algos, **datafold_algos}
+    all_algos = {
+        **megaman_algos,
+        **sklearn_algos,
+        **datafold_algos,
+    }
     embeddings, timings = run_fit_transform(X, all_algos)
     metrics = compute_metrics(X, embeddings)
 
@@ -77,7 +89,7 @@ def get_megaman_algorithms(n_components, geom_radius):
 
 def get_sklearn_algorithms(n_components):
     spectral = manifold.SpectralEmbedding(n_components=n_components, eigen_solver='amg')
-    lle = manifold.LocallyLinearEmbedding(n_components=n_components, eigen_solver='arpack')
+    lle = manifold.LocallyLinearEmbedding(n_components=n_components, n_neighbors=9, eigen_solver='arpack')
     isomap = manifold.Isomap(n_components=n_components, eigen_solver='arpack')
     return {
         'sklearn_spectral': spectral,
